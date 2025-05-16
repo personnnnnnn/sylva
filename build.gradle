@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+    id 'antlr'
+}
+
+group = 'org.sylva'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation 'org.jetbrains:annotations:24.0.1'
+    implementation 'org.antlr:antlr4-runtime:4.13.2'
+    antlr "org.antlr:antlr4:4.13.1"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+sourceSets {
+    main {
+        antlr {
+            srcDirs += "src/main/antlr"
+        }
+    }
+}
+
+generateGrammarSource {
+    outputDirectory = file("src/main/java/org/sylva/generated")
+    arguments += ['-visitor', '-package', 'org.sylva.generated']
+}
+
+tasks.withType(JavaCompile).configureEach {
+    dependsOn generateGrammarSource
+}
