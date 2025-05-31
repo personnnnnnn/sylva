@@ -8,7 +8,6 @@ import org.sylva.errors.SylvaError;
 import org.sylva.util.results.Err;
 import org.sylva.util.results.Ok;
 import org.sylva.util.results.Result;
-import org.sylva.values.FunctionValue;
 
 public record Call() implements Command {
     @Override
