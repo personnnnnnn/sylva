@@ -31,7 +31,6 @@ command
     | 'RETURN' # Return
     | 'JMP' '(' codelocation ')' # Jmp
     | 'SKP' # Skip
-    | 'NSKP' # NSkip
     | 'BNOT' # BNot
     | 'UMN' # Umn
     | 'EQ' # Eq
@@ -44,17 +43,21 @@ command
     | 'MOD' # Mod
     | 'ARGUMENTS' # Arguments
     | 'CALL' # Call
-    | 'FUNCTION' '(' codelocation ',' INTEGER ',' INTEGER ',' BOOL ')' # Function
+    | 'FUNCTION' '(' codelocation ')' # Function
     | 'GET' '(' INTEGER ',' INTEGER ')' # Get
     | 'SET' '(' INTEGER ',' INTEGER ')' # Set
     | 'PUSH' # Push
     | 'POP' # Pop
-    | 'GETATTR' '(' STRING ')' # GetAttr
-    | 'SETATTR' '(' STRING ')' # SetAttr
-    | 'GETIDX' # GetIdx
-    | 'SETIDX' # SetIdx
+    | 'GET_ATTR' '(' STRING ')' # GetAttr
+    | 'SET_ATTR' '(' STRING ')' # SetAttr
+    | 'GET_IDX' # GetIdx
+    | 'SET_IDX' # SetIdx
     | 'NOP' # Nop
     | 'REM' # Rem
     | 'DUP' # Dup
-    | 'TOSTRING' # ToString
+    | 'TO_STRING' # ToString
+    | 'NEEDED_ARG' '(' STRING ',' INTEGER ')' # NeededArg
+    | 'OPTIONAL_ARG' '(' STRING ',' INTEGER ',' codelocation ')' # OptionalArg
+    | 'SPREAD_ARG' '(' STRING ',' INTEGER ')' # SpreadArg
+    | 'NO_MORE_ARGUMENTS' # NoMoreArguments
     ;

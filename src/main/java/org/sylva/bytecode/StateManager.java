@@ -90,6 +90,17 @@ public class StateManager {
                     var level = Integer.parseInt(getContext.INTEGER().getLast().getText());
                     yield new Get(id, level);
                 }
+                case SylvaBytecodeParser.ArgumentsContext ignored -> new Arguments();
+                case SylvaBytecodeParser.NoMoreArgumentsContext ignored -> new NoMoreArguments();
+                case SylvaBytecodeParser.NeededArgContext neededArgContext -> new NeededArg(neededArgContext.STRING().getText(), Integer.parseInt(neededArgContext.INTEGER().getText()));
+                case SylvaBytecodeParser.SpreadArgContext spreadArgContext -> new SpreadArg(spreadArgContext.STRING().getText(), Integer.parseInt(spreadArgContext.INTEGER().getText()));
+                case SylvaBytecodeParser.OptionalArgContext optionalArgContext -> {
+                    var loc = optionalArgContext.codelocation().ID() == null
+                            ? Integer.parseInt(optionalArgContext.codelocation().INTEGER().getText())
+                            : codeLocations.get(optionalArgContext.codelocation().ID().getText());
+                    var id = Integer.parseInt(optionalArgContext.INTEGER().getText());
+                    yield new OptionalArg(optionalArgContext.STRING().getText(), id, loc);
+                }
                 default -> throw new IllegalStateException("Unexpected value: " + child);
             };
             commands.add(append);
@@ -125,6 +136,10 @@ public class StateManager {
 
     public @NotNull Value popValue() {
         return valueStack.pop();
+    }
+
+    public @NotNull Value peekValue() {
+        return valueStack.peek();
     }
 
     public StateManager(@NotNull List<Command> commands) {

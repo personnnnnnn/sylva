@@ -8,6 +8,8 @@ import org.sylva.util.results.Err;
 import org.sylva.util.results.Ok;
 import org.sylva.util.results.Result;
 
+import java.util.List;
+
 public interface Value {
     @NotNull String typeName();
 
@@ -43,7 +45,7 @@ public interface Value {
         return new Err<>(new UnsupportedUnaryOpError(typeName(), "unary -"));
     }
 
-    default @NotNull Result<Value, SylvaError> call() {
+    default @NotNull Result<Value, SylvaError> call(@NotNull List<Value> arguments) {
         return new Err<>(new UnsupportedUnaryOpError(typeName(), "function call"));
     }
 }

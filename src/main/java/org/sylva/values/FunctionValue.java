@@ -9,6 +9,8 @@ import org.sylva.util.results.Err;
 import org.sylva.util.results.Ok;
 import org.sylva.util.results.Result;
 
+import java.util.List;
+
 public record FunctionValue(@Nullable String name, int codeLocation, @NotNull StateManager manager) implements Value {
     @Override
     public @NotNull String typeName() {
@@ -16,15 +18,22 @@ public record FunctionValue(@Nullable String name, int codeLocation, @NotNull St
     }
 
     @Override
-    public @NotNull Result<Value, SylvaError> call() {
+    public @NotNull Result<Value, SylvaError> call(@NotNull List<Value> arguments) {
         int calledAt = manager.getCallStack().size();
         manager.goSub(codeLocation);
+
+        manager.pushValue(new ArgumentDelimiter());
+        for (var argument : arguments.reversed()) {
+            manager.pushValue(argument);
+        }
+
         while (!manager.isDone() && manager.getCallStack().size() != calledAt) {
             var res = manager.step();
             if (res.isError()) {
                 return new Err<>(res.error());
             }
         }
+
         return new Ok<>(manager.popValue());
     }
 }

@@ -10,7 +10,14 @@ public class Main {
     public static void main(String[] args) {
         var code = """
         PUSH
-            STR("Hello, World!")
+            NIL FUNCTION(@end)
+                OPTIONAL_ARG("x", 0, @if-given)
+                STR("string") SET(0, 0)
+                @if-given
+                NO_MORE_ARGUMENTS
+                GET(0, 0) RETURN
+            @end SET(0, 0)
+            ARGUMENTS STR("abcd") GET(0, 0) CALL
         POP
         \s""";
 

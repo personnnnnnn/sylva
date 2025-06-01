@@ -6,38 +6,29 @@ import org.sylva.Value;
 import org.sylva.bytecode.Command;
 import org.sylva.bytecode.StateManager;
 import org.sylva.errors.SylvaError;
-import org.sylva.util.results.Err;
 import org.sylva.util.results.Ok;
 import org.sylva.util.results.Result;
 import org.sylva.values.ArgumentDelimiter;
+import org.sylva.values.ArrayValue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public record Call() implements Command {
+public record SpreadArg(@NotNull String name, int varId) implements Command {
     @Override
     public @NotNull Result<@Nullable Object, SylvaError> run(@NotNull StateManager manager) {
-        var newIP = manager.getInstructionPointer() + 1;
-        var v = manager.popValue();
-
         List<Value> arguments = new ArrayList<>();
 
         while (true) {
-            var poppedValue = manager.popValue();
-            if (poppedValue instanceof ArgumentDelimiter) {
+            var arg = manager.popValue();
+            if (arg instanceof ArgumentDelimiter) {
                 break;
             }
-            arguments.add(poppedValue);
+            arguments.add(arg);
         }
 
-        var res = v.call(arguments.reversed());
-
-        if (res.isError()) {
-            return new Err<>(res.error());
-        }
-        manager.pushValue(res.ok());
-
-        manager.goTo(newIP);
+        var list = new ArrayValue(arguments);
+        manager.getVariableContext().setVar(varId, list);
 
         return new Ok<>(null);
     }
