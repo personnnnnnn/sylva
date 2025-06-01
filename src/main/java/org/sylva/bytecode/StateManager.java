@@ -51,12 +51,19 @@ public class StateManager {
                 case SylvaBytecodeParser.ModContext ignored -> new Mod();
                 case SylvaBytecodeParser.CallContext ignored -> new Call();
                 case SylvaBytecodeParser.UmnContext ignored -> new Umn();
+                case SylvaBytecodeParser.ToStringContext ignored -> new ToString();
                 case SylvaBytecodeParser.RemContext ignored -> new Rem();
                 case SylvaBytecodeParser.ReturnContext ignored -> new ReturnCommand();
                 case SylvaBytecodeParser.FltContext fltContext -> new Flt(Double.parseDouble(fltContext.FLOAT().getText()));
                 case SylvaBytecodeParser.SkipContext ignored -> new Skip();
                 case SylvaBytecodeParser.NilContext ignored -> new NilCommand();
                 case SylvaBytecodeParser.IntContext intContext -> new Int(Integer.parseInt(intContext.INTEGER().getText()));
+                case SylvaBytecodeParser.StrContext strContext -> new Str(
+                        strContext.STRING()
+                                .getText()
+                                .replaceAll("^\"|\"$", "")
+                                .translateEscapes() // thanks java :)
+                );
                 case SylvaBytecodeParser.NopContext ignored -> new Noop();
                 case SylvaBytecodeParser.DupContext ignored -> new Dup();
                 case SylvaBytecodeParser.JmpContext jmpContext -> {

@@ -10,10 +10,7 @@ public class Main {
     public static void main(String[] args) {
         var code = """
         PUSH
-            NIL FUNCTION(@end, 0, 0, false)
-                INT(2) ADD INT(3) MUL RETURN
-            @end SET(0, 0)
-            INT(1) GET(0, 0) CALL GET(0, 0) CALL GET(0, 0) CALL
+            STR("Hello, World!")
         POP
         \s""";
 

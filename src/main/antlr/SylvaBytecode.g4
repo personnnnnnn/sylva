@@ -56,4 +56,5 @@ command
     | 'NOP' # Nop
     | 'REM' # Rem
     | 'DUP' # Dup
+    | 'TOSTRING' # ToString
     ;
