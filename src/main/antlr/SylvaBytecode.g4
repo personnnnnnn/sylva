@@ -11,17 +11,20 @@ INTEGER : [0-9]+ ;
 FLOAT : INTEGER'.'INTEGER ;
 BOOL : 'true' | 'false' ;
 
-ID : [a-zA-Z_][a-zA-Z_0-9\-]* ;
+ID : [a-zA-Z_][a-zA-Z_0-9\-#]* ;
 
 COMMENT : ';' ~[\n]* -> skip ;
 WHITESPACE  : [ \r\f\n\t]+ -> skip ;
 
 program : command* EOF ;
 
+varid : '&'ID | INTEGER ',' INTEGER;
+
 codelocation : '@' ID | INTEGER ;
 
 command
     : '@' ID # Location
+    | '(' ('&'ID)* ')' '{' command* '}' # VariableManager
     | 'STR' '(' STRING ')' # Str
     | 'INT' '(' INTEGER ')' # Int
     | 'FLT' '(' FLOAT ')' # Flt
@@ -44,8 +47,8 @@ command
     | 'ARGUMENTS' # Arguments
     | 'CALL' # Call
     | 'FUNCTION' '(' codelocation ')' # Function
-    | 'GET' '(' INTEGER ',' INTEGER ')' # Get
-    | 'SET' '(' INTEGER ',' INTEGER ')' # Set
+    | 'GET' '(' varid ')' # Get
+    | 'SET' '(' varid ')' # Set
     | 'PUSH' # Push
     | 'POP' # Pop
     | 'GET_ATTR' '(' STRING ')' # GetAttr

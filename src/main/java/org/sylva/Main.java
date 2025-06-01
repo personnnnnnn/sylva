@@ -26,6 +26,14 @@ public class Main {
 
         var bytecode = generator.visit(sylvaTree);
 
+//        var bytecode = """
+//        PUSH (&x &y) {
+//            NIL SET(&x)
+//            GET(&x) SET(&y)
+//            GET(&x) GET(&y)
+//        } POP
+//        \s""";
+
         System.out.println(bytecode);
 
         SylvaBytecodeLexer lexer = new SylvaBytecodeLexer(CharStreams.fromString(bytecode));

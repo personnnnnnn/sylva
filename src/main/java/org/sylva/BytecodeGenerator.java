@@ -1,13 +1,40 @@
 package org.sylva;
 
+import com.sun.jdi.event.StepEvent;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
 import org.sylva.generated.SylvaBaseVisitor;
 import org.sylva.generated.SylvaParser;
+
+import java.util.HashSet;
+import java.util.Stack;
 
 public class BytecodeGenerator extends SylvaBaseVisitor<String> {
     private int labelIndex = 0;
     public int getNewLabelID() {
         return labelIndex++;
+    }
+
+    private Stack<HashSet<String>> variableIDStack = new Stack<>();
+    private void pushVariableIDStack() {
+        variableIDStack.push(new HashSet<>());
+    }
+    private void popVariableIDStack() {
+        variableIDStack.pop();
+    }
+    private void createVariable(@NotNull String name) {
+        variableIDStack.peek().add(name);
+    }
+    private @NotNull String getVariableIDStackRepresentation() {
+        StringBuilder str = new StringBuilder();
+        var prefix = "";
+
+        for (var variable : variableIDStack.peek()) {
+            str.append(prefix).append(variable);
+            prefix = " ";
+        }
+
+        return str.toString();
     }
 
     @Override
@@ -51,7 +78,7 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
             newString.append(string.charAt(i));
         }
         var str = "";
-        str += "STR(\"" + newString.toString() + "\")\n";
+        str += "STR(\"" + newString + "\")\n";
         return str;
     }
 
@@ -113,6 +140,103 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         var str = "";
         str += visit(ctx.value());
         str += "GET_IDX\n";
+        return str;
+    }
+
+    @Override
+    public String visitCallExpr(SylvaParser.@NotNull CallExprContext ctx) {
+        StringBuilder str = new StringBuilder();
+        str.append("ARGUMENTS\n");
+
+        boolean isSpread = false;
+        for (var child : ctx.callargs().children) {
+            if (child instanceof TerminalNode terminalNode && terminalNode.getSymbol().getType() == SylvaParser.TDOT) {
+                isSpread = true;
+                continue;
+            }
+            if (child instanceof SylvaParser.ExprContext exprContext) {
+                str.append(visit(exprContext));
+                if (isSpread) {
+                    str.append("SPREAD\n");
+                }
+            }
+            isSpread = false;
+        }
+
+        str.append(visit(ctx.value()));
+        str.append("CALL\n");
+
+        return str.toString();
+    }
+
+    @Override
+    public String visitValueExpr(SylvaParser.@NotNull ValueExprContext ctx) {
+        return visit(ctx.value());
+    }
+
+    @Override
+    public String visitBodyEval(SylvaParser.@NotNull BodyEvalContext ctx) {
+        var str = visit(ctx.genbody());
+        if ((!str.matches("RETURN\\s*$") || !str.matches("JMP\\(.*\\)\\s*$")) || str.matches("SKP\\s+JMP\\(.*\\)\\s*$")) {
+            str += "NIL\n";
+            str += "RETURN\n";
+        }
+        return str;
+    }
+
+    @Override
+    public String visitExprEval(SylvaParser.@NotNull ExprEvalContext ctx) {
+        var str = "";
+        pushVariableIDStack();
+        var contents = visit(ctx.expr());
+        var representation = getVariableIDStackRepresentation();
+        popVariableIDStack();
+        contents += "RETURN\n";
+        str += "(" + representation + ") {\n";
+        str += contents;
+        str += "}\n";
+        return str;
+    }
+
+    @Override
+    public String visitExpressionStatement(SylvaParser.@NotNull ExpressionStatementContext ctx) {
+        return visit(ctx.expr()) + "REM\n";
+    }
+
+    @Override
+    public String visitGeneralBody(SylvaParser.@NotNull GeneralBodyContext ctx) {
+        var str = "";
+        pushVariableIDStack();
+        var contents = new StringBuilder();
+        for (var stmt : ctx.stmt()) {
+            contents.append(visit(stmt));
+        }
+        var representation = getVariableIDStackRepresentation();
+        popVariableIDStack();
+
+        str += "(" + representation + ") {\n";
+        str += contents;
+        str += "}\n";
+
+        return str;
+    }
+
+    @Override
+    public String visitLocalFunctionValue(SylvaParser.@NotNull LocalFunctionValueContext ctx) {
+        var str = "";
+        var id = getNewLabelID();
+        var end = "@end#" + id;
+
+        if (ctx.name == null) {
+            str += "NIL\n";
+        } else {
+            str += "STR(\"" + ctx.name.getText() + "\")\n";
+        }
+
+        str += "FUNCTION(" + end + ")\n";
+        str += visit(ctx.fnbody());
+        str += end + "\n";
+
         return str;
     }
 }

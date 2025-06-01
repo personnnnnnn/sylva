@@ -145,8 +145,7 @@ callargs : '(' ('...'? expr (',' '...'? expr)* ','?)? ')' # CallArgumentList ;
 funcdef : PUB? 'fn' name=ID args fnbody # FunctionDefintion ;
 
 funcval
-    : 'fn' args fnbody # AnonFunctionValue
-    | 'fn' name=ID args fnbody # NamedFunctionValue
+    : 'fn' (name=ID)? args fnbody # LocalFunctionValue
     ;
 
 genbody : '{' stmt* '}' # GeneralBody ;

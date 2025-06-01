@@ -3,8 +3,6 @@ package org.sylva.bytecode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sylva.Value;
-import org.sylva.bytecode.commands.*;
-import org.sylva.bytecode.commands.Set;
 import org.sylva.errors.SylvaError;
 import org.sylva.generated.SylvaBytecodeParser;
 import org.sylva.util.results.Ok;
@@ -23,91 +21,7 @@ public class StateManager {
     }
 
     public static @NotNull StateManager from(SylvaBytecodeParser.@NotNull ProgramContext program) {
-        var children = program.command();
-
-        Map<String, Integer> codeLocations = new HashMap<>();
-
-        var commands = new ArrayList<Command>();
-
-        var childIndex = 0;
-        for (var child : children) {
-            if (child instanceof SylvaBytecodeParser.LocationContext location) {
-                String id = location.ID().getText();
-                codeLocations.put(id, childIndex);
-            } else {
-                childIndex++;
-            }
-        }
-
-        for (var child : children) {
-            if (child instanceof SylvaBytecodeParser.LocationContext) {
-                continue;
-            }
-            var append = switch (child) {
-                case SylvaBytecodeParser.AddContext ignored -> new Add();
-                case SylvaBytecodeParser.SubContext ignored -> new Sub();
-                case SylvaBytecodeParser.MulContext ignored -> new Mul();
-                case SylvaBytecodeParser.DivContext ignored -> new Div();
-                case SylvaBytecodeParser.ModContext ignored -> new Mod();
-                case SylvaBytecodeParser.CallContext ignored -> new Call();
-                case SylvaBytecodeParser.UmnContext ignored -> new Umn();
-                case SylvaBytecodeParser.ToStringContext ignored -> new ToString();
-                case SylvaBytecodeParser.RemContext ignored -> new Rem();
-                case SylvaBytecodeParser.ReturnContext ignored -> new ReturnCommand();
-                case SylvaBytecodeParser.FltContext fltContext -> new Flt(Double.parseDouble(fltContext.FLOAT().getText()));
-                case SylvaBytecodeParser.SkipContext ignored -> new Skip();
-                case SylvaBytecodeParser.NilContext ignored -> new NilCommand();
-                case SylvaBytecodeParser.IntContext intContext -> new Int(Integer.parseInt(intContext.INTEGER().getText()));
-                case SylvaBytecodeParser.StrContext strContext -> new Str(
-                        strContext.STRING()
-                                .getText()
-                                .replaceAll("^\"|\"$", "")
-                                .translateEscapes() // thanks java :)
-                );
-                case SylvaBytecodeParser.NopContext ignored -> new Noop();
-                case SylvaBytecodeParser.DupContext ignored -> new Dup();
-                case SylvaBytecodeParser.JmpContext jmpContext -> {
-                    var loc = jmpContext.codelocation().ID() == null
-                            ? Integer.parseInt(jmpContext.codelocation().INTEGER().getText())
-                            : codeLocations.get(jmpContext.codelocation().ID().getText());
-                    yield new Jump(loc);
-                }
-                case SylvaBytecodeParser.FunctionContext functionContext -> {
-                    var loc = functionContext.codelocation().ID() == null
-                            ? Integer.parseInt(functionContext.codelocation().INTEGER().getText())
-                            : codeLocations.get(functionContext.codelocation().ID().getText());
-                    yield new FunctionCommand(loc);
-                }
-                case SylvaBytecodeParser.PushContext ignored -> new Push();
-                case SylvaBytecodeParser.PopContext ignored -> new Pop();
-                case SylvaBytecodeParser.SetContext setContext -> {
-                    var id = Integer.parseInt(setContext.INTEGER().getFirst().getText());
-                    var level = Integer.parseInt(setContext.INTEGER().getLast().getText());
-                    yield new Set(id, level);
-                }
-                case SylvaBytecodeParser.GetContext getContext -> {
-                    var id = Integer.parseInt(getContext.INTEGER().getFirst().getText());
-                    var level = Integer.parseInt(getContext.INTEGER().getLast().getText());
-                    yield new Get(id, level);
-                }
-                case SylvaBytecodeParser.ArgumentsContext ignored -> new Arguments();
-                case SylvaBytecodeParser.NoMoreArgumentsContext ignored -> new NoMoreArguments();
-                case SylvaBytecodeParser.NeededArgContext neededArgContext -> new NeededArg(neededArgContext.STRING().getText(), Integer.parseInt(neededArgContext.INTEGER().getText()));
-                case SylvaBytecodeParser.SpreadArgContext spreadArgContext -> new SpreadArg(spreadArgContext.STRING().getText(), Integer.parseInt(spreadArgContext.INTEGER().getText()));
-                case SylvaBytecodeParser.OptionalArgContext optionalArgContext -> {
-                    var loc = optionalArgContext.codelocation().ID() == null
-                            ? Integer.parseInt(optionalArgContext.codelocation().INTEGER().getText())
-                            : codeLocations.get(optionalArgContext.codelocation().ID().getText());
-                    var id = Integer.parseInt(optionalArgContext.INTEGER().getText());
-                    yield new OptionalArg(optionalArgContext.STRING().getText(), id, loc);
-                }
-                default -> throw new IllegalStateException("Unexpected value: " + child);
-            };
-            commands.add(append);
-            childIndex++;
-        }
-
-        return new StateManager(commands);
+        return new StateCreator().stateManagerFrom(program);
     }
 
     private final @NotNull Stack<Value> valueStack = new Stack<>();
