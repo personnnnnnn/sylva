@@ -19,7 +19,7 @@ public class StateCreator {
         List<SylvaBytecodeParser.CommandContext> children = program.command();
 
         codeLocations = new HashMap<>();
-        commands = new ArrayList<Command>();
+        commands = new ArrayList<>();
         childIndex = 0;
         variableContexts = new Stack<>();
 
@@ -129,15 +129,25 @@ public class StateCreator {
                 }
                 case SylvaBytecodeParser.ArgumentsContext ignored -> new Arguments();
                 case SylvaBytecodeParser.NoMoreArgumentsContext ignored -> new NoMoreArguments();
-                case SylvaBytecodeParser.NeededArgContext neededArgContext -> new NeededArg(neededArgContext.STRING().getText(), Integer.parseInt(neededArgContext.INTEGER().getText()));
-                case SylvaBytecodeParser.SpreadArgContext spreadArgContext -> new SpreadArg(spreadArgContext.STRING().getText(), Integer.parseInt(spreadArgContext.INTEGER().getText()));
+                case SylvaBytecodeParser.NeededArgContext neededArgContext -> new NeededArg(neededArgContext.STRING().getText(), getVariableLocation(neededArgContext.varid()).a);
+                case SylvaBytecodeParser.SpreadArgContext spreadArgContext -> new SpreadArg(spreadArgContext.STRING().getText(), getVariableLocation(spreadArgContext.varid()).a);
                 case SylvaBytecodeParser.OptionalArgContext optionalArgContext -> {
                     var loc = optionalArgContext.codelocation().ID() == null
                             ? Integer.parseInt(optionalArgContext.codelocation().INTEGER().getText())
                             : codeLocations.get(optionalArgContext.codelocation().ID().getText());
-                    var id = Integer.parseInt(optionalArgContext.INTEGER().getText());
+                    var id = getVariableLocation(optionalArgContext.varid()).a;
                     yield new OptionalArg(optionalArgContext.STRING().getText(), id, loc);
                 }
+                case SylvaBytecodeParser.SetMultipleContext setMultipleContext -> {
+                    ArrayList<Pair<Integer, Integer>> variables = new ArrayList<>();
+                    for (var variableDefinition : setMultipleContext.varid()) {
+                        var varData = getVariableLocation(variableDefinition);
+                        variables.add(varData);
+                    }
+
+                    yield new SetMultiple(variables);
+                }
+                case SylvaBytecodeParser.SpreadContext ignored -> new Spread();
                 default -> throw new IllegalStateException("Unexpected value: " + child);
             };
             this.commands.add(append);

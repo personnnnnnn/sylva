@@ -59,8 +59,11 @@ command
     | 'REM' # Rem
     | 'DUP' # Dup
     | 'TO_STRING' # ToString
-    | 'NEEDED_ARG' '(' STRING ',' INTEGER ')' # NeededArg
-    | 'OPTIONAL_ARG' '(' STRING ',' INTEGER ',' codelocation ')' # OptionalArg
-    | 'SPREAD_ARG' '(' STRING ',' INTEGER ')' # SpreadArg
+    | 'NEEDED_ARG' '(' STRING ',' varid ')' # NeededArg
+    | 'OPTIONAL_ARG' '(' STRING ',' varid ',' codelocation ')' # OptionalArg
+    | 'SPREAD_ARG' '(' STRING ',' varid ')' # SpreadArg
     | 'NO_MORE_ARGUMENTS' # NoMoreArguments
+    | 'SPREAD' # Spread
+    | 'SET_MULTIPLE' '(' varid (',' varid)+ ')' # SetMultiple
+    | 'GET_LIBRARY' '(' STRING ')' # GetLibrary
     ;

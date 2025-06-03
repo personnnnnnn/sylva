@@ -8,11 +8,15 @@ import org.sylva.generated.SylvaBytecodeLexer;
 import org.sylva.generated.SylvaBytecodeParser;
 import org.sylva.generated.SylvaLexer;
 import org.sylva.generated.SylvaParser;
+import org.sylva.libraries.Std;
 
 public class Main {
     public static void main(String[] args) {
 
-        var code = "'Hello, World!\"'";
+        var code = """
+        fn sayHello(target = "World") => "Hello, "..target.."!"
+        \s""";
+
         System.out.println(code);
         System.out.println();
 
@@ -20,7 +24,7 @@ public class Main {
         CommonTokenStream sylvaTokens = new CommonTokenStream(sylvaLexer);
         SylvaParser sylvaParser = new SylvaParser(sylvaTokens);
 
-        ParseTree sylvaTree = sylvaParser.value();
+        ParseTree sylvaTree = sylvaParser.program();
 
         BytecodeGenerator generator = new BytecodeGenerator();
 
@@ -45,6 +49,8 @@ public class Main {
 
         var manager = StateManager.from(tree);
 
+        manager.addLibrary(Std.std);
+
         while (!manager.isDone()) {
             var res = manager.step();
             if (res.isError()) {
@@ -52,6 +58,7 @@ public class Main {
                 break;
             }
         }
+
         System.out.println(manager.getValueStack());
     }
 }

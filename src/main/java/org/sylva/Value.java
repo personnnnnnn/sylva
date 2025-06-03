@@ -8,6 +8,7 @@ import org.sylva.util.results.Err;
 import org.sylva.util.results.Ok;
 import org.sylva.util.results.Result;
 
+import java.util.Iterator;
 import java.util.List;
 
 public interface Value {
@@ -47,5 +48,25 @@ public interface Value {
 
     default @NotNull Result<Value, SylvaError> call(@NotNull List<Value> arguments) {
         return new Err<>(new UnsupportedUnaryOpError(typeName(), "function call"));
+    }
+
+    default @NotNull Result<Iterator<Value>, SylvaError> iter() {
+        return new Err<>(new UnsupportedUnaryOpError(typeName(), "iter"));
+    }
+
+    default @NotNull Result<Value, SylvaError> get(@NotNull Value attribute) {
+        return new Err<>(new UnsupportedUnaryOpError(typeName(), "get attribute"));
+    }
+
+    default @NotNull Result<Value, SylvaError> set(@NotNull Value attribute, @NotNull Value value) {
+        return new Err<>(new UnsupportedUnaryOpError(typeName(), "set attribute"));
+    }
+
+    default @NotNull Result<Value, SylvaError> getIndex(@NotNull Value index) {
+        return new Err<>(new UnsupportedUnaryOpError(typeName(), "get index"));
+    }
+
+    default @NotNull Result<Value, SylvaError> setIndex(@NotNull Value index, @NotNull Value value) {
+        return new Err<>(new UnsupportedUnaryOpError(typeName(), "set index"));
     }
 }

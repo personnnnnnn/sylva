@@ -1,6 +1,5 @@
 package org.sylva;
 
-import com.sun.jdi.event.StepEvent;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
 import org.sylva.generated.SylvaBaseVisitor;
@@ -15,7 +14,7 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         return labelIndex++;
     }
 
-    private Stack<HashSet<String>> variableIDStack = new Stack<>();
+    private final Stack<HashSet<String>> variableIDStack = new Stack<>();
     private void pushVariableIDStack() {
         variableIDStack.push(new HashSet<>());
     }
@@ -25,16 +24,38 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
     private void createVariable(@NotNull String name) {
         variableIDStack.peek().add(name);
     }
+
     private @NotNull String getVariableIDStackRepresentation() {
         StringBuilder str = new StringBuilder();
         var prefix = "";
 
         for (var variable : variableIDStack.peek()) {
-            str.append(prefix).append(variable);
+            str.append(prefix).append("&").append(variable);
             prefix = " ";
         }
 
         return str.toString();
+    }
+
+    @Override
+    public String visitFullProgram(SylvaParser.@NotNull FullProgramContext ctx) {
+        var str = "";
+
+        pushVariableIDStack();
+        StringBuilder content = new StringBuilder();
+
+        for (var stmt : ctx.stmt()) {
+            content.append(visit(stmt));
+        }
+
+        var variables = getVariableIDStackRepresentation();
+        popVariableIDStack();
+
+        str += "(" + variables + ") {\n";
+        str += content;
+        str += "}\n";
+
+        return str;
     }
 
     @Override
@@ -176,12 +197,7 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
 
     @Override
     public String visitBodyEval(SylvaParser.@NotNull BodyEvalContext ctx) {
-        var str = visit(ctx.genbody());
-        if ((!str.matches("RETURN\\s*$") || !str.matches("JMP\\(.*\\)\\s*$")) || str.matches("SKP\\s+JMP\\(.*\\)\\s*$")) {
-            str += "NIL\n";
-            str += "RETURN\n";
-        }
-        return str;
+        return visit(ctx.genbody()) + "NIL\nRETURN\n";
     }
 
     @Override
@@ -238,5 +254,92 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         str += end + "\n";
 
         return str;
+    }
+
+    @Override
+    public String visitFunctionDefintion(SylvaParser.@NotNull FunctionDefintionContext ctx) {
+        var str = "";
+        var id = getNewLabelID();
+        var end = "@end#" + id;
+
+        var functionName = ctx.name.getText();
+        createVariable(functionName);
+
+        str += "STR(\"" + functionName + "\")\n";
+
+        str += "FUNCTION(" + end + ")\n";
+        str += visit(ctx.fnbody());
+        str += end + "\n";
+
+        str += "SET(&" + functionName + ")\n";
+
+        return str;
+    }
+
+    @Override
+    public String visitVarAccess(SylvaParser.@NotNull VarAccessContext ctx) {
+        return "GET(&" + ctx.ID().getText() + ")\n";
+    }
+
+    @Override
+    public String visitLetStatement(SylvaParser.@NotNull LetStatementContext ctx) {
+        StringBuilder str = new StringBuilder();
+        for (var variableName : ctx.defvalues().ID()) {
+            var stringName = variableName.getText();
+            str.append("NIL\n");
+            str.append("SET(&").append(stringName).append(")\n");
+            createVariable(stringName);
+        }
+        return str.toString();
+    }
+
+    @Override
+    public String visitLetValueStatement(SylvaParser.@NotNull LetValueStatementContext ctx) {
+        StringBuilder str = new StringBuilder();
+
+        str.append(visit(ctx.expr()));
+
+        if (ctx.defvalues().ID().size() == 1) {
+            var stringName = ctx.defvalues().ID(0).getText();
+            createVariable(stringName);
+            str.append("SET(&").append(stringName).append(")\n");
+            return str.toString();
+        }
+
+        str.append("SET_MULTIPLE(");
+
+        var continuation = "";
+        for (var variable : ctx.defvalues().ID()) {
+            var stringName = variable.getText();
+            createVariable(stringName);
+
+            str.append(continuation).append("&").append(stringName);
+
+            continuation = ", ";
+        }
+
+        str.append(")\n");
+
+        return str.toString();
+    }
+
+    @Override
+    public String visitSimpleReturnStatement(SylvaParser.SimpleReturnStatementContext ctx) {
+        return "NIL\nRETURN\n";
+    }
+
+    @Override
+    public String visitReturnValueStatement(SylvaParser.@NotNull ReturnValueStatementContext ctx) {
+        return visit(ctx.expr()) + "RETURN\n";
+    }
+
+    @Override
+    public String visitAddSubOpExpr(SylvaParser.@NotNull AddSubOpExprContext ctx) {
+        return visit(ctx.expr(0)) + visit(ctx.expr(1)) + (ctx.op.getText().equals("-") ? "SUB" : "ADD") + "\n";
+    }
+
+    @Override
+    public String visitConcatExpr(SylvaParser.@NotNull ConcatExprContext ctx) {
+        return visit(ctx.expr(0)) + "TO_STRING\n" + visit(ctx.expr(1)) + "TO_STRING\nADD\n";
     }
 }

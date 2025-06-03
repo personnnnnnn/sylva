@@ -7,10 +7,21 @@ import org.sylva.errors.SylvaError;
 import org.sylva.generated.SylvaBytecodeParser;
 import org.sylva.util.results.Ok;
 import org.sylva.util.results.Result;
+import org.sylva.values.ExternalLibrary;
 
 import java.util.*;
 
 public class StateManager {
+    public @NotNull HashMap<String, Value> libraries = new HashMap<>();
+
+    public void addLibrary(@NotNull String name, @NotNull Value value) {
+        libraries.put(name, value);
+    }
+
+    public void addLibrary(@NotNull ExternalLibrary library) {
+        addLibrary(library.name, library);
+    }
+
     private int instructionPointer = 0;
     private final @NotNull List<Command> commands;
     private boolean moved = false;

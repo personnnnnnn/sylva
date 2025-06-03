@@ -1,0 +1,1 @@
+fn sayHello(target = "World") => "Hello, "..target.."!"
