@@ -13,6 +13,7 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
     public int getNewLabelID() {
         return labelIndex++;
     }
+    private boolean isImmediateInWith = false;
 
     private final Stack<HashSet<String>> variableIDStack = new Stack<>();
     private void pushVariableIDStack() {
@@ -43,6 +44,10 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
 
         pushVariableIDStack();
         StringBuilder content = new StringBuilder();
+
+        for (var withStmt : ctx.withentry()) {
+            content.append(visit(withStmt));
+        }
 
         for (var stmt : ctx.stmt()) {
             content.append(visit(stmt));
@@ -341,5 +346,67 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
     @Override
     public String visitConcatExpr(SylvaParser.@NotNull ConcatExprContext ctx) {
         return visit(ctx.expr(0)) + "TO_STRING\n" + visit(ctx.expr(1)) + "TO_STRING\nADD\n";
+    }
+
+    @Override
+    public String visitImportName(SylvaParser.ImportNameContext ctx) {
+        StringBuilder str = new StringBuilder();
+        var i = 0;
+        if (isImmediateInWith) {
+            var name = ctx.ID(0);
+            i++;
+            str.append("GET_LIBRARY(\"").append(name).append("\")\n");
+        }
+
+        for (; i < ctx.ID().size(); i++) {
+            var name = ctx.ID(i);
+            str.append("GET_ATTR(\"").append(name).append("\")\n");
+        }
+
+        return str.toString();
+    }
+
+    @Override
+    public String visitRenameImport(SylvaParser.@NotNull RenameImportContext ctx) {
+        createVariable(ctx.ID().getText());
+        return visit(ctx.withname()) + "SET(&" + ctx.ID().getText() + ")\n";
+    }
+
+    @Override
+    public String visitImport(SylvaParser.@NotNull ImportContext ctx) {
+        var varName = ctx.withname().children.getLast().getText();
+        createVariable(varName);
+        return visit(ctx.withname()) + "SET(&" + varName + ")\n";
+    }
+
+    @Override
+    public String visitMassImport(SylvaParser.@NotNull MassImportContext ctx) {
+        StringBuilder str = new StringBuilder(visit(ctx.withname()));
+        isImmediateInWith = false;
+        for (var withStmt : ctx.withstmt()) {
+            str.append("DUP\n");
+            str.append(visit(withStmt));
+        }
+        str.append("REM\n");
+        return str.toString();
+    }
+
+    @Override
+    public String visitSingleImport(SylvaParser.@NotNull SingleImportContext ctx) {
+        isImmediateInWith = true;
+        var str = visit(ctx.withstmt());
+        isImmediateInWith = false;
+        return str;
+    }
+
+    @Override
+    public String visitMultipleImport(SylvaParser.@NotNull MultipleImportContext ctx) {
+        StringBuilder str = new StringBuilder();
+        for (var withStmt : ctx.withstmt()) {
+            isImmediateInWith = true;
+            str.append(visit(withStmt));
+        }
+        isImmediateInWith = false;
+        return str.toString();
     }
 }

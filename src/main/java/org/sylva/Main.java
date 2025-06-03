@@ -14,7 +14,10 @@ public class Main {
     public static void main(String[] args) {
 
         var code = """
-        fn sayHello(target = "World") => "Hello, "..target.."!"
+        with std {
+            say
+        }
+        say("Hello, World!")
         \s""";
 
         System.out.println(code);

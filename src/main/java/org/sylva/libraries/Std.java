@@ -8,7 +8,7 @@ public class Std {
     public static final ExternalLibrary std = new ExternalLibrary("std");
 
     static {
-        std.addFunction("print", (args) -> {
+        std.addFunction("say", (args) -> {
             for (var arg : args) {
                 System.out.println(arg);
             }

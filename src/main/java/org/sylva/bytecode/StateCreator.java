@@ -148,6 +148,8 @@ public class StateCreator {
                     yield new SetMultiple(variables);
                 }
                 case SylvaBytecodeParser.SpreadContext ignored -> new Spread();
+                case SylvaBytecodeParser.GetLibraryContext getLibraryContext -> new GetLibrary(getLibraryContext.STRING().getText().replaceAll("^\"|\"$", ""));
+                case SylvaBytecodeParser.GetAttrContext getAttrContext -> new GetAttr(getAttrContext.STRING().getText().replaceAll("^\"|\"$", ""));
                 default -> throw new IllegalStateException("Unexpected value: " + child);
             };
             this.commands.add(append);
