@@ -22,7 +22,7 @@ public record FunctionValue(@Nullable String name, int codeLocation, @NotNull St
         int calledAt = manager.getCallStack().size();
         manager.goSub(codeLocation);
 
-        manager.pushValue(new ArgumentDelimiter());
+        manager.pushValue(new Limit());
         for (var argument : arguments.reversed()) {
             manager.pushValue(argument);
         }
@@ -35,5 +35,10 @@ public record FunctionValue(@Nullable String name, int codeLocation, @NotNull St
         }
 
         return new Ok<>(manager.popValue());
+    }
+
+    @Override
+    public @NotNull String toString() {
+        return "<function" + (name != null ? " " + name : "") +">";
     }
 }

@@ -10,20 +10,31 @@ import org.sylva.generated.SylvaLexer;
 import org.sylva.generated.SylvaParser;
 import org.sylva.libraries.Std;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 public class Main {
     public static void main(String[] args) {
 
-        var code = """
-        with std {
-            say
+        StringBuilder code = new StringBuilder();
+        try {
+            File myObj = new File("testing/sylva/spread-arguments/main.sylva");
+            Scanner myReader = new Scanner(myObj);
+            while (myReader.hasNextLine()) {
+                code.append(myReader.nextLine()).append("\n");
+            }
+            myReader.close();
+        } catch (FileNotFoundException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+            return;
         }
-        say("Hello, World!")
-        \s""";
 
         System.out.println(code);
         System.out.println();
 
-        SylvaLexer sylvaLexer = new SylvaLexer(CharStreams.fromString(code));
+        SylvaLexer sylvaLexer = new SylvaLexer(CharStreams.fromString(code.toString()));
         CommonTokenStream sylvaTokens = new CommonTokenStream(sylvaLexer);
         SylvaParser sylvaParser = new SylvaParser(sylvaTokens);
 
@@ -32,14 +43,6 @@ public class Main {
         BytecodeGenerator generator = new BytecodeGenerator();
 
         var bytecode = generator.visit(sylvaTree);
-
-//        var bytecode = """
-//        PUSH (&x &y) {
-//            NIL SET(&x)
-//            GET(&x) SET(&y)
-//            GET(&x) GET(&y)
-//        } POP
-//        \s""";
 
         System.out.println(bytecode);
 
@@ -57,6 +60,8 @@ public class Main {
         while (!manager.isDone()) {
             var res = manager.step();
             if (res.isError()) {
+                System.out.println(manager.getInstructionPointer());
+                System.out.println(manager.getCurrentCommand());
                 System.out.println(res.error().fullMessage());
                 break;
             }

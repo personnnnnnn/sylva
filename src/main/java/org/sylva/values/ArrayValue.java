@@ -19,4 +19,9 @@ public record ArrayValue(List<Value> items) implements Value {
     public @NotNull Result<Iterator<Value>, SylvaError> iter() {
         return new Ok<>(items.iterator());
     }
+
+    @Override
+    public @NotNull String toString() {
+        return items.toString();
+    }
 }

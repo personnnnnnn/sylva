@@ -13,6 +13,11 @@ public class Nil implements Value {
     }
 
     @Override
+    public String toString() {
+        return "nil";
+    }
+
+    @Override
     public @NotNull Result<Boolean, SylvaError> bool() {
         return new Ok<>(false);
     }

@@ -55,7 +55,7 @@ public class StateCreator {
             depth++;
             i--;
         }
-        return new Pair<>(depth, id);
+        return new Pair<>(id, depth);
     }
 
     private @NotNull Pair<Integer, Integer> getVariableLocation(@NotNull SylvaBytecodeParser.VaridContext ctx) {
@@ -127,7 +127,7 @@ public class StateCreator {
                     var loc = getVariableLocation(getContext.varid());
                     yield new Get(loc.a, loc.b);
                 }
-                case SylvaBytecodeParser.ArgumentsContext ignored -> new Arguments();
+                case SylvaBytecodeParser.LimitContext ignored -> new Limit();
                 case SylvaBytecodeParser.NoMoreArgumentsContext ignored -> new NoMoreArguments();
                 case SylvaBytecodeParser.NeededArgContext neededArgContext -> new NeededArg(neededArgContext.STRING().getText(), getVariableLocation(neededArgContext.varid()).a);
                 case SylvaBytecodeParser.SpreadArgContext spreadArgContext -> new SpreadArg(spreadArgContext.STRING().getText(), getVariableLocation(spreadArgContext.varid()).a);
@@ -150,6 +150,7 @@ public class StateCreator {
                 case SylvaBytecodeParser.SpreadContext ignored -> new Spread();
                 case SylvaBytecodeParser.GetLibraryContext getLibraryContext -> new GetLibrary(getLibraryContext.STRING().getText().replaceAll("^\"|\"$", ""));
                 case SylvaBytecodeParser.GetAttrContext getAttrContext -> new GetAttr(getAttrContext.STRING().getText().replaceAll("^\"|\"$", ""));
+                case SylvaBytecodeParser.SpreadIntoContext spreadIntoContext -> new SpreadInto(Integer.parseInt(spreadIntoContext.INTEGER().getText()));
                 default -> throw new IllegalStateException("Unexpected value: " + child);
             };
             this.commands.add(append);

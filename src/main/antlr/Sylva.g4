@@ -24,7 +24,7 @@ PUB : 'pub' ;
 POKE : 'poke' ;
 FN : 'fn' ;
 IN : 'in' ;
-HAS : 'has' ;
+OF : 'of' ;
 FOR : 'for' ;
 IF : 'if' ;
 UNLESS : 'unless' ;
@@ -76,7 +76,7 @@ idaccess
     | ID # VarSet
     ;
 
-varSetValues : idaccess (',' idaccess)* # SetValues ;
+varSetValues : idaccess (',' idaccess)+ # ComplexSetValues ;
 
 defvalues : ID (',' ID)* ;
 
@@ -89,7 +89,8 @@ stmt: 'let' (PUB|POKE)? defvalues '=' expr # LetValueStatement
     | funcdef # FunctionDefinitionStatement
     | whilestmt # WhileStatement
     | indefinitestmt # IndefiniteStatement
-    | varSetValues '=' expr # SetStatement
+    | idaccess '=' expr # SimpleSetStatement
+    | varSetValues '=' expr # ComplexSetStatement
     | expr # ExpressionStatement
     | 'break' # BreakStatement
     | 'continue' # ContinueStatement
@@ -101,7 +102,7 @@ expr: expr 'to' expr ('by' expr)? # RangeExpression
     | expr op=('*'|'/'|'%') expr # OtherOpExpr
     | expr op=('+'|'-') expr # AddSubOpExpr
     | expr '?' expr # OptionalExpr
-    | expr op=('has'|'in') expr # HasExpr
+    | expr op=('in'|'of') expr # HasExpr
     | expr op=('=='|'!='|'<'|'<='|'>'|'>=') expr # ComparisonExpr
     | expr op=('&&'|'||') expr # LogicExpr
     | value # ValueExpr

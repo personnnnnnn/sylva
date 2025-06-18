@@ -1,0 +1,5 @@
+with std.say
+
+let x
+x = "Hello!"
+say(x)

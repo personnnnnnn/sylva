@@ -44,7 +44,7 @@ command
     | 'MUL' # Mul
     | 'DIV' # Div
     | 'MOD' # Mod
-    | 'ARGUMENTS' # Arguments
+    | 'LIMIT' # Limit
     | 'CALL' # Call
     | 'FUNCTION' '(' codelocation ')' # Function
     | 'GET' '(' varid ')' # Get
@@ -66,4 +66,6 @@ command
     | 'SPREAD' # Spread
     | 'SET_MULTIPLE' '(' varid (',' varid)+ ')' # SetMultiple
     | 'GET_LIBRARY' '(' STRING ')' # GetLibrary
+    | 'SPREAD_INTO' '(' INTEGER ')' # SpreadInto
+    | 'ARRAY' # ArrayCommand
     ;

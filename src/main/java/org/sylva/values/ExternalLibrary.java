@@ -44,4 +44,9 @@ public class ExternalLibrary implements Value {
         }
         return Value.super.get(attribute);
     }
+
+    @Override
+    public @NotNull String toString() {
+        return "<external library " + name +">";
+    }
 }

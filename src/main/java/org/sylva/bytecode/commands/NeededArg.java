@@ -9,13 +9,13 @@ import org.sylva.errors.errors.ArgumentError;
 import org.sylva.util.results.Err;
 import org.sylva.util.results.Ok;
 import org.sylva.util.results.Result;
-import org.sylva.values.ArgumentDelimiter;
+import org.sylva.values.Limit;
 
 public record NeededArg(@NotNull String name, int varId) implements Command {
     @Override
     public @NotNull Result<@Nullable Object, SylvaError> run(@NotNull StateManager manager) {
         var arg = manager.peekValue();
-        if (arg instanceof ArgumentDelimiter) {
+        if (arg instanceof Limit) {
             return new Err<>(new ArgumentError("Missing argument '" + name + "'"));
         }
         manager.getVariableContext().setVar(varId, manager.popValue());

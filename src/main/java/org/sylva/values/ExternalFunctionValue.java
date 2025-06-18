@@ -19,4 +19,9 @@ public record ExternalFunctionValue(@Nullable String name, @NotNull ExternalFunc
     public @NotNull Result<Value, SylvaError> call(@NotNull List<Value> arguments) {
         return function.call(arguments);
     }
+
+    @Override
+    public @NotNull String toString() {
+        return "<external function" + (name != null ? " " + name : "") +">";
+    }
 }

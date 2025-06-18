@@ -9,7 +9,7 @@ import org.sylva.errors.SylvaError;
 import org.sylva.util.results.Err;
 import org.sylva.util.results.Ok;
 import org.sylva.util.results.Result;
-import org.sylva.values.ArgumentDelimiter;
+import org.sylva.values.Limit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +24,7 @@ public record Call() implements Command {
 
         while (true) {
             var poppedValue = manager.popValue();
-            if (poppedValue instanceof ArgumentDelimiter) {
+            if (poppedValue instanceof Limit) {
                 break;
             }
             arguments.add(poppedValue);

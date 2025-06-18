@@ -1,10 +1,13 @@
 package org.sylva;
 
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sylva.generated.SylvaBaseVisitor;
 import org.sylva.generated.SylvaParser;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Stack;
 
@@ -14,14 +17,18 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         return labelIndex++;
     }
     private boolean isImmediateInWith = false;
+    private SylvaParser.ArgsContext arguments;
 
     private final Stack<HashSet<String>> variableIDStack = new Stack<>();
     private void pushVariableIDStack() {
         variableIDStack.push(new HashSet<>());
     }
+
     private void popVariableIDStack() {
         variableIDStack.pop();
     }
+
+    // TODO: disallow creating a variable twice
     private void createVariable(@NotNull String name) {
         variableIDStack.peek().add(name);
     }
@@ -40,7 +47,7 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
 
     @Override
     public String visitFullProgram(SylvaParser.@NotNull FullProgramContext ctx) {
-        var str = "";
+        var str = "PUSH\n";
 
         pushVariableIDStack();
         StringBuilder content = new StringBuilder();
@@ -58,7 +65,7 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
 
         str += "(" + variables + ") {\n";
         str += content;
-        str += "}\n";
+        str += "}\nPOP\n";
 
         return str;
     }
@@ -172,7 +179,7 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
     @Override
     public String visitCallExpr(SylvaParser.@NotNull CallExprContext ctx) {
         StringBuilder str = new StringBuilder();
-        str.append("ARGUMENTS\n");
+        str.append("LIMIT\n");
 
         boolean isSpread = false;
         for (var child : ctx.callargs().children) {
@@ -202,20 +209,56 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
 
     @Override
     public String visitBodyEval(SylvaParser.@NotNull BodyEvalContext ctx) {
-        return visit(ctx.genbody()) + "NIL\nRETURN\n";
+        var str = "";
+
+        pushVariableIDStack();
+        StringBuilder content = new StringBuilder();
+
+        if (arguments != null) {
+            for (var arg : arguments.children) {
+                content.append(visit(arg));
+            }
+        }
+
+        for (var stmt : ctx.genbody().children) {
+            content.append(visit(stmt));
+        }
+
+        var representation = getVariableIDStackRepresentation();
+        popVariableIDStack();
+
+        str += "(" + representation + ") {\n";
+        str += content;
+        str += "}\n";
+        str += "NIL\nRETURN\n";
+        return str;
     }
 
     @Override
     public String visitExprEval(SylvaParser.@NotNull ExprEvalContext ctx) {
         var str = "";
+
         pushVariableIDStack();
-        var contents = visit(ctx.expr());
+        StringBuilder content = new StringBuilder();
+
+        if (arguments != null) {
+            for (var arg : arguments.children) {
+                if (!(arg instanceof TerminalNode)) {
+                    content.append(visit(arg));
+                }
+            }
+        }
+
+        content.append(visit(ctx.expr()));
+        content.append("RETURN\n");
+
         var representation = getVariableIDStackRepresentation();
         popVariableIDStack();
-        contents += "RETURN\n";
+
         str += "(" + representation + ") {\n";
-        str += contents;
+        str += content;
         str += "}\n";
+        
         return str;
     }
 
@@ -248,6 +291,8 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         var id = getNewLabelID();
         var end = "@end#" + id;
 
+        arguments = ctx.args();
+
         if (ctx.name == null) {
             str += "NIL\n";
         } else {
@@ -255,8 +300,11 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         }
 
         str += "FUNCTION(" + end + ")\n";
+
         str += visit(ctx.fnbody());
         str += end + "\n";
+
+        arguments = null;
 
         return str;
     }
@@ -266,6 +314,8 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         var str = "";
         var id = getNewLabelID();
         var end = "@end#" + id;
+
+        arguments = ctx.args();
 
         var functionName = ctx.name.getText();
         createVariable(functionName);
@@ -278,9 +328,12 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
 
         str += "SET(&" + functionName + ")\n";
 
+        arguments = null;
+
         return str;
     }
 
+    // TODO: make it so it throws an error when there is no variable with that name
     @Override
     public String visitVarAccess(SylvaParser.@NotNull VarAccessContext ctx) {
         return "GET(&" + ctx.ID().getText() + ")\n";
@@ -408,5 +461,63 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         }
         isImmediateInWith = false;
         return str.toString();
+    }
+
+    // TODO: make it so it throws an error when there is no variable with that name
+    @Override
+    public String visitVarSet(SylvaParser.@NotNull VarSetContext ctx) {
+        return "SET(&" + ctx.ID().getText() + ")\n";
+    }
+
+    @Override
+    public String visitIndexSet(SylvaParser.@NotNull IndexSetContext ctx) {
+        return visit(ctx.expr(0)) + visit(ctx.expr(1)) + "SET_IDX\n";
+    }
+
+    @Override
+    public String visitAttributeSet(SylvaParser.@NotNull AttributeSetContext ctx) {
+        return visit(ctx.expr()) + "SET_ATTR(\"" + ctx.ID().getText() + "\")\\n";
+    }
+
+    @Override
+    public String visitComplexSetValues(SylvaParser.@NotNull ComplexSetValuesContext ctx) {
+        StringBuilder str = new StringBuilder();
+        for (var varSet : ctx.idaccess().reversed()) {
+            str.append(visit(varSet));
+        }
+        return str.toString();
+    }
+
+    @Override
+    public String visitComplexSetStatement(SylvaParser.@NotNull ComplexSetStatementContext ctx) {
+        return visit(ctx.expr()) + "SPREAD_INTO(" + ((ctx.varSetValues().getChildCount() - 1) / 2 + 1) + ")\n" + visit(ctx.varSetValues());
+    }
+
+    @Override
+    public String visitSimpleSetStatement(SylvaParser.@NotNull SimpleSetStatementContext ctx) {
+        return visit(ctx.expr()) + visit(ctx.idaccess());
+    }
+
+    @Override
+    public String visitNormalArg(SylvaParser.@NotNull NormalArgContext ctx) {
+        createVariable(ctx.ID().getText());
+        return "NEEDED_ARG(\"" + ctx.ID().getText() + "\", &" + ctx.ID().getText() + ")\n";
+    }
+
+    @Override
+    public String visitArgWithDefault(SylvaParser.@NotNull ArgWithDefaultContext ctx) {
+        createVariable(ctx.ID().getText());
+        var id = getNewLabelID();
+        var end = "@end#" + id;
+        var str = "OPTIONAL_ARG(\"" + ctx.ID().getText() + "\", &" + ctx.ID().getText() + ", " + end + ")\n";
+        str += visit(ctx.expr());
+        str += end + "\n";
+        return str;
+    }
+
+    @Override
+    public String visitExpandedArg(SylvaParser.@NotNull ExpandedArgContext ctx) {
+        createVariable(ctx.ID().getText());
+        return "SPREAD_ARG(\"" + ctx.ID().getText() + "\", &" + ctx.ID().getText() + ")\n";
     }
 }

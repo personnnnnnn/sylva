@@ -1,0 +1,7 @@
+with {
+    std {
+        say
+    }
+}
+
+say("Hello, World!")

@@ -8,7 +8,7 @@ import org.sylva.bytecode.StateManager;
 import org.sylva.errors.SylvaError;
 import org.sylva.util.results.Ok;
 import org.sylva.util.results.Result;
-import org.sylva.values.ArgumentDelimiter;
+import org.sylva.values.Limit;
 import org.sylva.values.ArrayValue;
 
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ public record SpreadArg(@NotNull String name, int varId) implements Command {
 
         while (true) {
             var arg = manager.popValue();
-            if (arg instanceof ArgumentDelimiter) {
+            if (arg instanceof Limit) {
                 break;
             }
             arguments.add(arg);
