@@ -1,0 +1,14 @@
+with std.say
+
+// this is the closest thing to HelloWorld(print) you'll ever see
+"Hello, World!" |> say
+
+// testing to see how the operator handles operation order
+fn double(x) => x * 2
+
+1 + 2 |> double |> say // should log 6
+
+// testing additional arguments
+
+fn add(x, y) => x + y
+5 |> add(3) |> say // should log 8

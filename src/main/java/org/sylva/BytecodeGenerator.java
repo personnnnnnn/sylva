@@ -10,6 +10,7 @@ import org.sylva.generated.SylvaParser;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Stack;
 
 public class BytecodeGenerator extends SylvaBaseVisitor<String> {
@@ -279,7 +280,7 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
 
     @Override
     public String visitExpressionStatement(SylvaParser.@NotNull ExpressionStatementContext ctx) {
-        return visit(ctx.expr()) + "REM\n";
+        return visit(ctx.field()) + "REM\n";
     }
 
     @Override
@@ -486,7 +487,7 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
 
     @Override
     public String visitIndexSet(SylvaParser.@NotNull IndexSetContext ctx) {
-        return visit(ctx.expr(0)) + visit(ctx.expr(1)) + "SET_IDX\n";
+        return visit(ctx.expr()) + visit(ctx.field()) + "SET_IDX\n";
     }
 
     @Override
@@ -534,5 +535,56 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
     public String visitExpandedArg(SylvaParser.@NotNull ExpandedArgContext ctx) {
         createVariable(ctx.ID().getText());
         return "SPREAD_ARG(\"" + ctx.ID().getText() + "\", &" + ctx.ID().getText() + ")\n";
+    }
+
+    @Override
+    public String visitPipeFunctionExpr(SylvaParser.@NotNull PipeFunctionExprContext ctx) {
+        var pipeItems = ctx.pipeitem();
+        StringBuilder str = new StringBuilder();
+        str.append("LIMIT\n".repeat(pipeItems.size()));
+        str.append(visit(ctx.expr()));
+        for (var item : pipeItems) {
+            str.append(visit(item));
+        }
+        System.out.println(str);
+        return str.toString();
+    }
+
+    @Override
+    public String visitPipeitem(SylvaParser.@NotNull PipeitemContext ctx) {
+        StringBuilder str = new StringBuilder();
+        if (ctx.expr() instanceof SylvaParser.ValueExprContext valueExpr
+                && valueExpr.value() instanceof SylvaParser.CallExprContext callExpr) {
+            var isSpread = false;
+            for (var arg : callExpr.callargs().children) {
+                if (arg instanceof TerminalNode) {
+                    isSpread = Objects.equals(arg.getText(), "...");
+                    continue;
+                }
+                str.append(visit(arg));
+                if (isSpread) {
+                    str.append("SPREAD\n");
+                }
+            }
+            str.append(visit(callExpr.value()));
+        } else {
+            str.append(visit(ctx.expr()));
+        }
+        str.append("CALL\n");
+        return str.toString();
+    }
+
+    @Override
+    public String visitOtherOpExpr(SylvaParser.@NotNull OtherOpExprContext ctx) {
+        var str = "";
+        str += visit(ctx.expr(0));
+        str += visit(ctx.expr(1));
+        str += switch (ctx.op.getText()) {
+            case "*" -> "MUL";
+            case "/" -> "DIV";
+            case "%" -> "MOD";
+            default -> throw new IllegalStateException("Unexpected value: " + ctx.op.getText());
+        } + "\n";
+        return str;
     }
 }

@@ -50,6 +50,7 @@ DOT : '.' ;
 LBRACK : '[' ;
 RBRACK : ']' ;
 HASH : '#' ;
+PIPE : '|>' ;
 STRING
     : '\''(~[\\'\n\r]|'\\'~[\n\r])*'\''
     | '"'(~[\\"\n\r]|'\\'~[\n\r])*'"'
@@ -72,7 +73,7 @@ program
 
 idaccess
     : expr '.' ID # AttributeSet
-    | expr '[' expr ']' # IndexSet
+    | expr '[' field ']' # IndexSet
     | ID # VarSet
     ;
 
@@ -91,10 +92,14 @@ stmt: 'let' (PUB|POKE)? defvalues '=' expr # LetValueStatement
     | indefinitestmt # IndefiniteStatement
     | idaccess '=' expr # SimpleSetStatement
     | varSetValues '=' expr # ComplexSetStatement
-    | expr # ExpressionStatement
+    | field # ExpressionStatement
     | 'break' # BreakStatement
     | 'continue' # ContinueStatement
     ;
+
+field: expr ('|>' pipeitem)+ # PipeFunctionExpr
+     | expr # JustGoOn
+     ;
 
 expr: expr 'to' expr ('by' expr)? # RangeExpression
     | op=('!'|'+'|'-'|'#'|'copyof'|'tostring'|'typeof') expr # UnaryOpExpr
@@ -108,10 +113,13 @@ expr: expr 'to' expr ('by' expr)? # RangeExpression
     | value # ValueExpr
     ;
 
+// should also have callargs, but it will get aborbed by a call expression, so it needs to be detected in the translator
+pipeitem : expr ;
+
 tableItem
-   : ID '=' expr # TableEntryId
-   | '[' expr ']' '=' expr # TableEntryValue
-   | '...' expr # TableEntrySpread
+   : ID '=' field # TableEntryId
+   | '[' field ']' '=' field # TableEntryValue
+   | '...' field # TableEntrySpread
    ;
 
 value
@@ -128,7 +136,7 @@ value
     | ID # VarAccess
     | funcval # FunctionValue
     | ifexpr # IfExprValue
-    | '(' expr ')' # ParensValue
+    | '(' field ')' # ParensValue
     | value '.' ID # AttributeValue
     | value '[' expr ']' # IndexValue
     | value callargs # CallExpr
@@ -141,7 +149,7 @@ arg : '...' ID # ExpandedArg
 
 args : '(' (arg (',' arg)* ','?)? ')' # FnArgumentList ;
 
-callargs : '(' ('...'? expr (',' '...'? expr)* ','?)? ')' # CallArgumentList ;
+callargs : '(' ('...'? field (',' '...'? field)* ','?)? ')' # CallArgumentList ;
 
 funcdef : PUB? 'fn' name=ID args fnbody # FunctionDefintion ;
 
@@ -157,20 +165,20 @@ fnbody
     ;
 
 ifexpr
-    : type=('if'|'unless') '(' expr ')' fnbody 'else' ifexpr # IfExprContinuation
-    | type=('if'|'unless') '(' expr ')' fnbody 'else' fnbody # IfExprElse
-    | type=('if'|'unless') '(' expr ')' fnbody # IfExprSimple
+    : type=('if'|'unless') '(' field ')' fnbody 'else' ifexpr # IfExprContinuation
+    | type=('if'|'unless') '(' field ')' fnbody 'else' fnbody # IfExprElse
+    | type=('if'|'unless') '(' field ')' fnbody # IfExprSimple
     ;
 
 ifstmt
-    : type=('if'|'unless') '(' expr ')' genbody 'else' ifstmt # IfStatementContinuation
-    | type=('if'|'unless') '(' expr ')' genbody 'else' genbody # IfStatementElse
-    | type=('if'|'unless') '(' expr ')' genbody # IfStatementSimple
+    : type=('if'|'unless') '(' field ')' genbody 'else' ifstmt # IfStatementContinuation
+    | type=('if'|'unless') '(' field ')' genbody 'else' genbody # IfStatementElse
+    | type=('if'|'unless') '(' field ')' genbody # IfStatementSimple
     ;
 
-forstmt : 'for' '(' defvalues 'in' expr ')' genbody # For ;
+forstmt : 'for' '(' defvalues 'in' field ')' genbody # For ;
 
-whilestmt : type=('while'|'until') '(' expr ')' genbody # While ;
+whilestmt : type=('while'|'until') '(' field ')' genbody # While ;
 
 indefinitestmt : 'indefinitely' genbody # Indefinite ;
 
