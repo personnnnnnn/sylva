@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sylva.generated.SylvaBaseVisitor;
+import org.sylva.generated.SylvaBytecodeParser;
 import org.sylva.generated.SylvaParser;
 
 import java.util.ArrayList;
@@ -214,10 +215,18 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         pushVariableIDStack();
         StringBuilder content = new StringBuilder();
 
+        ParseTree last = null;
         if (arguments != null) {
             for (var arg : arguments.children) {
-                content.append(visit(arg));
+                if (!(arg instanceof TerminalNode)) {
+                    content.append(visit(arg));
+                    last = arg;
+                }
             }
+        }
+
+        if (!(last instanceof SylvaBytecodeParser.SpreadArgContext)) {
+            content.append("NO_MORE_ARGUMENTS\n");
         }
 
         for (var stmt : ctx.genbody().children) {
@@ -241,12 +250,18 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
         pushVariableIDStack();
         StringBuilder content = new StringBuilder();
 
+        ParseTree last = null;
         if (arguments != null) {
             for (var arg : arguments.children) {
                 if (!(arg instanceof TerminalNode)) {
                     content.append(visit(arg));
+                    last = arg;
                 }
             }
+        }
+
+        if (!(last instanceof SylvaBytecodeParser.SpreadArgContext)) {
+            content.append("NO_MORE_ARGUMENTS\n");
         }
 
         content.append(visit(ctx.expr()));

@@ -1,0 +1,7 @@
+with std.say
+
+fn add(x, y) => x + y
+
+say(add(1, 2))
+say(add(1)) // we should get errors here
+say(add(1, 2, 3)) // and here

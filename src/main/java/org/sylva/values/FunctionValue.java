@@ -21,6 +21,7 @@ public record FunctionValue(@Nullable String name, int codeLocation, @NotNull St
     public @NotNull Result<Value, SylvaError> call(@NotNull List<Value> arguments) {
         int calledAt = manager.getCallStack().size();
         manager.goSub(codeLocation);
+        manager.pushContext();
 
         manager.pushValue(new Limit());
         for (var argument : arguments.reversed()) {
@@ -33,6 +34,8 @@ public record FunctionValue(@Nullable String name, int codeLocation, @NotNull St
                 return new Err<>(res.error());
             }
         }
+
+        manager.popContext();
 
         return new Ok<>(manager.popValue());
     }

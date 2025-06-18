@@ -19,7 +19,7 @@ public class Main {
 
         StringBuilder code = new StringBuilder();
         try {
-            File myObj = new File("testing/sylva/spread-arguments/main.sylva");
+            File myObj = new File("testing/sylva/functions-with-arguments/main.sylva");
             Scanner myReader = new Scanner(myObj);
             while (myReader.hasNextLine()) {
                 code.append(myReader.nextLine()).append("\n");
@@ -60,12 +60,18 @@ public class Main {
         while (!manager.isDone()) {
             var res = manager.step();
             if (res.isError()) {
+                System.out.println("Error");
+                System.out.println();
                 System.out.println(manager.getInstructionPointer());
                 System.out.println(manager.getCurrentCommand());
                 System.out.println(res.error().fullMessage());
                 break;
             }
         }
+
+        System.out.println();
+        System.out.println("Program end");
+        System.out.println();
 
         System.out.println(manager.getValueStack());
     }

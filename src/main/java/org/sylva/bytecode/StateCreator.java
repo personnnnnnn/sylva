@@ -129,14 +129,14 @@ public class StateCreator {
                 }
                 case SylvaBytecodeParser.LimitContext ignored -> new Limit();
                 case SylvaBytecodeParser.NoMoreArgumentsContext ignored -> new NoMoreArguments();
-                case SylvaBytecodeParser.NeededArgContext neededArgContext -> new NeededArg(neededArgContext.STRING().getText(), getVariableLocation(neededArgContext.varid()).a);
-                case SylvaBytecodeParser.SpreadArgContext spreadArgContext -> new SpreadArg(spreadArgContext.STRING().getText(), getVariableLocation(spreadArgContext.varid()).a);
+                case SylvaBytecodeParser.NeededArgContext neededArgContext -> new NeededArg(neededArgContext.STRING().getText().replaceAll("\"", ""), getVariableLocation(neededArgContext.varid()).a);
+                case SylvaBytecodeParser.SpreadArgContext spreadArgContext -> new SpreadArg(spreadArgContext.STRING().getText().replaceAll("\"", ""), getVariableLocation(spreadArgContext.varid()).a);
                 case SylvaBytecodeParser.OptionalArgContext optionalArgContext -> {
                     var loc = optionalArgContext.codelocation().ID() == null
                             ? Integer.parseInt(optionalArgContext.codelocation().INTEGER().getText())
                             : codeLocations.get(optionalArgContext.codelocation().ID().getText());
                     var id = getVariableLocation(optionalArgContext.varid()).a;
-                    yield new OptionalArg(optionalArgContext.STRING().getText(), id, loc);
+                    yield new OptionalArg(optionalArgContext.STRING().getText().replaceAll("\"", ""), id, loc);
                 }
                 case SylvaBytecodeParser.SetMultipleContext setMultipleContext -> {
                     ArrayList<Pair<Integer, Integer>> variables = new ArrayList<>();
