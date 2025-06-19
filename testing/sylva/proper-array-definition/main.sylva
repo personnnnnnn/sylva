@@ -1,0 +1,7 @@
+with std.say
+
+let arr = [1, 2, 3]
+let x, y, z = arr
+
+say(arr)
+say(x, y, z)

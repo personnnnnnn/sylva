@@ -19,7 +19,7 @@ public class Main {
 
         StringBuilder code = new StringBuilder();
         try {
-            File myObj = new File("testing/sylva/superior-function-calling/main.sylva");
+            File myObj = new File("testing/sylva/proper-array-definition/main.sylva");
             Scanner myReader = new Scanner(myObj);
             while (myReader.hasNextLine()) {
                 code.append(myReader.nextLine()).append("\n");

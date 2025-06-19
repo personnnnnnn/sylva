@@ -84,6 +84,7 @@ public class StateCreator {
 
             var append = switch (child) {
                 case SylvaBytecodeParser.AddContext ignored -> new Add();
+                case SylvaBytecodeParser.ArrayCommandContext ignored -> new ArrayCommand();
                 case SylvaBytecodeParser.SubContext ignored -> new Sub();
                 case SylvaBytecodeParser.MulContext ignored -> new Mul();
                 case SylvaBytecodeParser.DivContext ignored -> new Div();
@@ -127,7 +128,7 @@ public class StateCreator {
                     var loc = getVariableLocation(getContext.varid());
                     yield new Get(loc.a, loc.b);
                 }
-                case SylvaBytecodeParser.LimitContext ignored -> new Limit();
+                case SylvaBytecodeParser.LimitContext ignored -> new LimitCommand();
                 case SylvaBytecodeParser.NoMoreArgumentsContext ignored -> new NoMoreArguments();
                 case SylvaBytecodeParser.NeededArgContext neededArgContext -> new NeededArg(neededArgContext.STRING().getText().replaceAll("\"", ""), getVariableLocation(neededArgContext.varid()).a);
                 case SylvaBytecodeParser.SpreadArgContext spreadArgContext -> new SpreadArg(spreadArgContext.STRING().getText().replaceAll("\"", ""), getVariableLocation(spreadArgContext.varid()).a);

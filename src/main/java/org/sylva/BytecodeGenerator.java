@@ -185,15 +185,15 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
 
         boolean isSpread = false;
         for (var child : ctx.callargs().children) {
-            if (child instanceof TerminalNode terminalNode && terminalNode.getSymbol().getType() == SylvaParser.TDOT) {
-                isSpread = true;
+            if (child instanceof TerminalNode) {
+                if (Objects.equals(child.getText(), "...")) {
+                    isSpread = true;
+                }
                 continue;
             }
-            if (child instanceof SylvaParser.ExprContext exprContext) {
-                str.append(visit(exprContext));
-                if (isSpread) {
-                    str.append("SPREAD\n");
-                }
+            str.append(visit(child));
+            if (isSpread) {
+                str.append("SPREAD\n");
             }
             isSpread = false;
         }
@@ -586,5 +586,24 @@ public class BytecodeGenerator extends SylvaBaseVisitor<String> {
             default -> throw new IllegalStateException("Unexpected value: " + ctx.op.getText());
         } + "\n";
         return str;
+    }
+
+    @Override
+    public String visitArrayValue(SylvaParser.@NotNull ArrayValueContext ctx) {
+        StringBuilder str = new StringBuilder();
+        str.append("LIMIT\n");
+        var isSpread = false;
+        for (var v : ctx.children) {
+            if (v instanceof TerminalNode) {
+                isSpread = Objects.equals(v.getText(), "...");
+                continue;
+            }
+            str.append(visit(v));
+            if (isSpread) {
+                str.append("SPREAD\n");
+            }
+        }
+        str.append("ARRAY\n");
+        return str.toString();
     }
 }
